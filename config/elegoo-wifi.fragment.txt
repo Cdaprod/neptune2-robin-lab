@@ -1,0 +1,9 @@
+# Wi-Fi-only fragment/reference. NOT a complete Neptune 2 machine config.
+>CFG_WIFI_MODE 0
+>CFG_WIFI_AP_NAME cda_Lab
+>CFG_WIFI_KEY_CODE CHANGE_ME
+>CFG_CLOUD_ENABLE 0
+>CFG_WIFI_CLOUD_HOST www.baizhongyun.cn
+>CFG_CLOUD_PORT 10086
+>WISI_LIST_SCAN 1
+>DISABLE_WIFI 0

@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "neptune-robin"
+version = "0.1.0"
+description = "USB, SD and MKS WiFi host toolkit for Elegoo Neptune 2 / Robin Nano v1.2"
+requires-python = ">=3.11"
+dependencies = ["pyserial>=3.5,<4"]
+
+[project.scripts]
+neptune-robin = "neptune_robin.cli:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]

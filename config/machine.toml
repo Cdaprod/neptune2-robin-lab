@@ -1,0 +1,36 @@
+[machine]
+name = "Elegoo Neptune 2"
+profile = "neptune2-robin-nano-v1.2"
+firmware_family = "Elegoo / ZNP / MKS Robin"
+
+[board]
+name = "ZNP/MKS Robin Nano v1.2"
+mcu = "STM32F103VET6"
+clock_mhz = 72
+flash_kib = 512
+ram_kib = 64
+firmware_offset_hex = "0x7000"
+usb_transport = "serial-gcode"
+
+[serial]
+baud = 115200
+probe_commands = ["M115", "M105", "M21", "M20"]
+
+[wifi]
+enabled = true
+module = "MKS Robin WiFi"
+soc = "ESP8266"
+radio_ghz = 2.4
+mode = "station"
+ssid = "cda_Lab"
+cloud_enabled = false
+tcp_port = 8080
+http_port = 80
+udp_discovery_port = 8989
+
+[network]
+expected_subnet = "192.168.0.0/24"
+addressing = "dhcp"
+
+[safety]
+internet_exposure = false
