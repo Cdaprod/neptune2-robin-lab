@@ -1,0 +1,19 @@
+services:
+  toolbox:
+    build:
+      context: .
+      dockerfile: host/Dockerfile
+    container_name: neptune2-robin-toolbox
+    restart: unless-stopped
+    network_mode: host
+    working_dir: /workspace
+    volumes:
+      - ./:/workspace
+    environment:
+      NEPTUNE_SUBNET: ${NEPTUNE_SUBNET:-192.168.0.0/24}
+      NEPTUNE_IP: ${NEPTUNE_IP:-}
+      MKS_TCP_PORT: ${MKS_TCP_PORT:-8080}
+      MKS_HTTP_PORT: ${MKS_HTTP_PORT:-80}
+      MKS_UDP_PORT: ${MKS_UDP_PORT:-8989}
+      TZ: ${TZ:-America/New_York}
+    command: ["sleep", "infinity"]
