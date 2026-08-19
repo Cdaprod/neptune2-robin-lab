@@ -1,0 +1,91 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+COMPOSE=(docker compose -f "$ROOT/compose.yaml")
+SUBNET="${NEPTUNE_SUBNET:-192.168.0.0/24}"
+IP="${NEPTUNE_IP:-}"
+TCP_PORT="${MKS_TCP_PORT:-8080}"
+HTTP_PORT="${MKS_HTTP_PORT:-80}"
+UDP_PORT="${MKS_UDP_PORT:-8989}"
+
+usage() {
+  cat <<'EOF'
+neptune <command> [args]
+
+Commands:
+  up                  Build/start the Raspberry Pi toolbox
+  down                Stop the toolbox
+  shell               Enter the toolbox interactively
+  logs                Follow toolbox logs
+  discover            Scan the configured LAN for the MKS Wi-Fi endpoint
+  probe [IP]          Probe HTTP/TCP/UDP-related printer services
+  status              Show Docker and configured printer status
+
+Environment:
+  NEPTUNE_SUBNET      default: 192.168.0.0/24
+  NEPTUNE_IP          optional known printer IP
+  MKS_TCP_PORT        default: 8080
+  MKS_HTTP_PORT       default: 80
+  MKS_UDP_PORT        default: 8989
+EOF
+}
+
+cmd_up() {
+  "${COMPOSE[@]}" up -d --build
+}
+
+cmd_down() {
+  "${COMPOSE[@]}" down
+}
+
+cmd_shell() {
+  cmd_up >/dev/null
+  "${COMPOSE[@]}" exec toolbox bash
+}
+
+cmd_logs() {
+  "${COMPOSE[@]}" logs -f --tail=100 toolbox
+}
+
+cmd_discover() {
+  cmd_up >/dev/null
+  echo "Scanning $SUBNET for likely MKS/ESP8266 endpoints..."
+  "${COMPOSE[@]}" exec -T toolbox bash -lc \
+    "nmap -sn '$SUBNET'; echo; echo 'Candidates exposing MKS ports:'; nmap -n --open -p $HTTP_PORT,$TCP_PORT '$SUBNET'"
+}
+
+cmd_probe() {
+  local target="${1:-$IP}"
+  [[ -n "$target" ]] || { echo "Set NEPTUNE_IP or pass an IP: neptune probe 192.168.0.x" >&2; exit 2; }
+  cmd_up >/dev/null
+  "${COMPOSE[@]}" exec -T toolbox bash -lc \
+    "echo '=== ping ==='; ping -c 2 '$target' || true; \
+     echo; echo '=== ports ==='; nmap -n -sV -p $HTTP_PORT,$TCP_PORT '$target' || true; \
+     echo; echo '=== HTTP ==='; curl -m 3 -sv 'http://$target:$HTTP_PORT/' -o /dev/null || true; \
+     echo; echo '=== TCP M115 probe ==='; printf 'M115\n' | nc -w 3 '$target' '$TCP_PORT' || true"
+}
+
+cmd_status() {
+  echo "=== Docker ==="
+  "${COMPOSE[@]}" ps || true
+  echo
+  echo "=== Network target ==="
+  echo "subnet: $SUBNET"
+  echo "ip:     ${IP:-<not pinned>}"
+  echo "ports:  http=$HTTP_PORT tcp=$TCP_PORT udp=$UDP_PORT"
+  if [[ -n "$IP" ]]; then
+    ping -c 1 -W 1 "$IP" >/dev/null 2>&1 && echo "reachability: online" || echo "reachability: offline/unresolved"
+  fi
+}
+
+case "${1:-}" in
+  up) cmd_up ;;
+  down) cmd_down ;;
+  shell) cmd_shell ;;
+  logs) cmd_logs ;;
+  discover) cmd_discover ;;
+  probe) shift; cmd_probe "${1:-}" ;;
+  status) cmd_status ;;
+  *) usage ;;
+esac
