@@ -13,28 +13,37 @@ BIN ?=
 
 .DEFAULT_GOAL := help
 
-.PHONY: help bootstrap ports doctor status send console wifi-config discover wifi-doctor bridge sd-stage wifi-firmware-stage wifi-firmware-info test clean
+.PHONY: help bootstrap ports doctor status send console wifi-config discover wifi-doctor bridge sd-stage wifi-firmware-stage wifi-firmware-info host-up host-down host-shell host-status host-discover host-probe test clean
 
 help:
 > @echo "Neptune 2 Robin Lab"
 > @echo
-> @echo "make bootstrap"
-> @echo "make ports"
-> @echo "make doctor PORT=/dev/cu.usbserial-XXXX"
-> @echo "make status PORT=/dev/cu.usbserial-XXXX"
-> @echo "make send PORT=/dev/cu.usbserial-XXXX CMD='M115'"
-> @echo "make console PORT=/dev/cu.usbserial-XXXX"
+> @echo "Local USB / Python tooling:"
+> @echo "  make bootstrap"
+> @echo "  make ports"
+> @echo "  make doctor PORT=/dev/cu.usbserial-XXXX"
+> @echo "  make status PORT=/dev/cu.usbserial-XXXX"
+> @echo "  make send PORT=/dev/cu.usbserial-XXXX CMD='M115'"
+> @echo "  make console PORT=/dev/cu.usbserial-XXXX"
 > @echo
-> @echo "make wifi-config"
-> @echo "make discover"
-> @echo "make wifi-doctor IP=192.168.0.123"
-> @echo "make bridge IP=192.168.0.123"
+> @echo "Printer Wi-Fi / SD tooling:"
+> @echo "  make wifi-config"
+> @echo "  make discover"
+> @echo "  make wifi-doctor IP=192.168.0.123"
+> @echo "  make bridge IP=192.168.0.123"
+> @echo "  make sd-stage SD=/Volumes/NEPTUNE_SD"
+> @echo "  make wifi-firmware-stage SD=/Volumes/NEPTUNE_SD BIN=/path/MksWifi.bin"
+> @echo "  make wifi-firmware-info"
 > @echo
-> @echo "make sd-stage SD=/Volumes/NEPTUNE_SD"
-> @echo "make wifi-firmware-stage SD=/Volumes/NEPTUNE_SD BIN=/path/MksWifi.bin"
-> @echo "make wifi-firmware-info"
+> @echo "Raspberry Pi / Docker host:"
+> @echo "  make host-up"
+> @echo "  make host-status"
+> @echo "  make host-discover"
+> @echo "  make host-probe IP=192.168.0.123"
+> @echo "  make host-shell"
+> @echo "  make host-down"
 > @echo
-> @echo "make test"
+> @echo "  make test"
 
 bootstrap:
 > @test -d "$(VENV)" || $(PYTHON) -m venv "$(VENV)"
@@ -98,6 +107,30 @@ wifi-firmware-info:
 > @echo "Flash mode: DOUT"
 > @echo "Flash size: 4M (3M SPIFFS)"
 > @echo "Runtime ports: TCP 8080, HTTP 80, UDP 8989"
+
+host-up:
+> chmod +x bin/neptune
+> ./bin/neptune up
+
+host-down:
+> ./bin/neptune down
+
+host-shell:
+> chmod +x bin/neptune
+> ./bin/neptune shell
+
+host-status:
+> chmod +x bin/neptune
+> ./bin/neptune status
+
+host-discover:
+> chmod +x bin/neptune
+> ./bin/neptune discover
+
+host-probe:
+> chmod +x bin/neptune
+> @test -n "$(IP)" || (echo "IP is required"; exit 2)
+> ./bin/neptune probe "$(IP)"
 
 test: bootstrap
 > $(VENV)/bin/python -m unittest discover -s tests -v
